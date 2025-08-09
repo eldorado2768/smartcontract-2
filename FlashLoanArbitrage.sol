@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+// Corrected import paths
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./interfaces/IDex.sol";
-import "./interfaces/AaveV3FlashLoan.sol";
+import "./IDex.sol";
+import "./AaveV3FlashLoan.sol";
 
 // This contract will execute a flash loan arbitrage on our two mock DEXes.
 // The core logic is within the `executeOperation` function, which is called
 // by Aave's LendingPool after the flash loan is received.
-contract FlashLoanArbitrage is AaveV3FlashLoan.IFlashLoanSimpleReceiver {
+contract FlashLoanArbitrage is IFlashLoanSimpleReceiver {
     using SafeERC20 for IERC20;
 
     // Aave's Lending Pool address
-    AaveV3FlashLoan.ILendingPool public immutable LENDING_POOL;
+    ILendingPool public immutable LENDING_POOL;
 
     // The two DEXes we will be using for the arbitrage
     IDex public immutable DEX_A;
@@ -40,7 +41,7 @@ contract FlashLoanArbitrage is AaveV3FlashLoan.IFlashLoanSimpleReceiver {
         address _dai,
         address _usdc
     ) {
-        LENDING_POOL = AaveV3FlashLoan.ILendingPool(_lendingPool);
+        LENDING_POOL = ILendingPool(_lendingPool);
         DEX_A = IDex(_dexA);
         DEX_B = IDex(_dexB);
         DAI = _dai;
@@ -84,7 +85,7 @@ contract FlashLoanArbitrage is AaveV3FlashLoan.IFlashLoanSimpleReceiver {
         );
     }
 
-    /**
+    /*
      * @notice This is the callback function from the Aave Lending Pool.
      * The flash loaned funds are available inside this function.
      * The arbitrage logic must be contained here.
@@ -96,11 +97,11 @@ contract FlashLoanArbitrage is AaveV3FlashLoan.IFlashLoanSimpleReceiver {
      * @return bool Must return true for a successful loan repayment.
      */
     function executeOperation(
-        address[] memory assets,
+        address[] memory,
         uint256[] memory amounts,
         uint256[] memory premium,
-        address initiator,
-        bytes calldata params
+        address,
+        bytes calldata
     ) external returns (bool) {
         // Here, the contract receives the `amounts` of `assets`
         uint256 loanAmount = amounts[0];
@@ -122,11 +123,11 @@ contract FlashLoanArbitrage is AaveV3FlashLoan.IFlashLoanSimpleReceiver {
         // Path 1: DAI -> USDC on DEX A, then USDC -> DAI on DEX B
         if (profitPath1 > profitPath2) {
             uint256 usdcOut = DEX_A.buyToken(DAI, USDC, loanAmount);
-            IERC20(DAI).safeApprove(address(DEX_A), loanAmount);
+            IERC20(DAI).approve(address(DEX_A), loanAmount);
             IERC20(USDC).safeTransfer(address(DEX_A), usdcOut); // This is mock transfer
             
             uint256 daiOut = DEX_B.buyToken(USDC, DAI, usdcOut);
-            IERC20(USDC).safeApprove(address(DEX_B), usdcOut);
+            IERC20(USDC).approve(address(DEX_B), usdcOut);
             IERC20(DAI).safeTransfer(address(DEX_B), daiOut); // This is mock transfer
             
             // Repay the loan
@@ -140,11 +141,11 @@ contract FlashLoanArbitrage is AaveV3FlashLoan.IFlashLoanSimpleReceiver {
         // Path 2: DAI -> USDC on DEX B, then USDC -> DAI on DEX A
         else if (profitPath2 > 0) {
             uint256 usdcOut = DEX_B.buyToken(DAI, USDC, loanAmount);
-            IERC20(DAI).safeApprove(address(DEX_B), loanAmount);
+            IERC20(DAI).approve(address(DEX_B), loanAmount);
             IERC20(USDC).safeTransfer(address(DEX_B), usdcOut); // This is mock transfer
             
             uint256 daiOut = DEX_A.buyToken(USDC, DAI, usdcOut);
-            IERC20(USDC).safeApprove(address(DEX_A), usdcOut);
+            IERC20(USDC).approve(address(DEX_A), usdcOut);
             IERC20(DAI).safeTransfer(address(DEX_A), daiOut); // This is mock transfer
 
             // Repay the loan
@@ -172,7 +173,7 @@ contract FlashLoanArbitrage is AaveV3FlashLoan.IFlashLoanSimpleReceiver {
         uint256 _reserveInDEX2,
         uint256 _reserveOutDEX2,
         uint256 _flashLoanFee
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         uint256 swapFeeNumerator = 3;
         uint256 swapFeeDenominator = 1000;
         
