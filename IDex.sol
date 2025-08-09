@@ -1,21 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-// This interface defines the expected public functions of the Dex contract.
-// It allows other contracts (like FlashLoanArbitrageTest) to interact with
-// a deployed Dex contract by knowing its function signatures, without needing
-// the full implementation details.
+// The interface for our mock DEX contracts.
 interface IDex {
-    // Functions for adding liquidity (if needed for external calls, though owner-only in Dex)
-    // function addLiquidity(address _tokenAddress, uint256 _amount) external;
+    // Returns the current reserves of the two tokens in the pool.
+    function getReserves() external view returns (uint256 reserveA, uint256 reserveB);
 
-    // Functions for swapping tokens
-    function buyToken(address _tokenIn, address _tokenOut, uint256 _amountIn) external view returns (uint256);
-    function sellToken(address _tokenIn, address _tokenOut, uint256 _amountIn) external view returns (uint256);
+    // Executes a mock swap from tokenIn to tokenOut.
+    function buyToken(address tokenIn, address tokenOut, uint256 amountIn) external returns (uint256 amountOut);
 
-    // Function to get the current price of a token pair
-    function getPrice(address _tokenA, address _tokenB) external view returns (uint256);
-
-    // Function to get the balance of a specific token held by this DEX contract
+    // Gets the balance of a specific token held by the DEX.
     function getBalance(address _tokenAddress) external view returns (uint256);
 }
