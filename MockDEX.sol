@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+/ SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -39,6 +39,18 @@ contract MockDEX is IDex {
             reserveA -= amountOut;
         } else {
             revert("Invalid tokens for swap");
+        }
+    }
+
+    // New function to fulfill the IDex interface.
+    // In a real DEX, this would return the contract's balance of the specified token.
+    function getBalance(address _tokenAddress) external view returns (uint256) {
+        if (_tokenAddress == address(tokenA)) {
+            return reserveA;
+        } else if (_tokenAddress == address(tokenB)) {
+            return reserveB;
+        } else {
+            return 0;
         }
     }
 }
